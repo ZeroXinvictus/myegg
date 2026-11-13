@@ -1,0 +1,382 @@
+{
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-11-13",
+    "name": "MyEgg ZeroXinvictus v2.2",
+    "author": "ZeroXinvictus",
+    "uuid": "a2119a89-a3f6-5db8-97d6-a3a3d27b969d",
+    "description": "Production-focused universal Pterodactyl runtime for Node.js, Bun, Python, PHP, Go, Rust, C/C++, Android SDK builds, Playwright, Puppeteer, Firefox, WebKit, camoufox-js, bexxcv, Playwright Core 1.62.1, and a pre-fetched Camoufox runtime.",
+    "features": [],
+    "docker_images": {
+        "ghcr.io/fidzzcodex-me/myegg:main": "ghcr.io/fidzzcodex-me/myegg:main"
+    },
+    "file_denylist": [],
+    "startup": "/bin/bash /entrypoint.sh",
+    "config": {
+        "files": "{}",
+        "startup": "{\"done\":\"$\"}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\napt-get update -y && apt-get install -y curl git wget unzip\necho \"Ready!\"",
+            "container": "ghcr.io/fidzzcodex-me/myegg:main",
+            "entrypoint": "/bin/bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Startup Command",
+            "description": "Command utama aplikasi. Auto-detect Node, Bun, Python, PHP, Go, Rust, C/C++ atau Android.",
+            "env_variable": "STARTUP_CMD",
+            "default_value": "node index.js",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Static Host Mode",
+            "description": "true menjalankan Python static server dan mengabaikan Startup Command.",
+            "env_variable": "STATIC_HOST_MODE",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Static Host Directory",
+            "description": "Folder relatif dari /home/container untuk static hosting.",
+            "env_variable": "STATIC_HOST_DIR",
+            "default_value": "public",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:100",
+            "field_type": "text"
+        },
+        {
+            "name": "App Port",
+            "description": "Port aplikasi atau static host.",
+            "env_variable": "APP_PORT",
+            "default_value": "3000",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:1024|max:65535",
+            "field_type": "text"
+        },
+        {
+            "name": "Node.js Version",
+            "description": "Versi Node.js yang dipakai saat runtime. Image menyediakan 22, 24 dan 26.",
+            "env_variable": "NODE_VERSION",
+            "default_value": "24",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:22,24,26",
+            "field_type": "text"
+        },
+        {
+            "name": "Python Version",
+            "description": "Versi Python aktif.",
+            "env_variable": "PYTHON_VERSION",
+            "default_value": "3.13",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:3.12,3.13,3.14",
+            "field_type": "text"
+        },
+        {
+            "name": "PHP Version",
+            "description": "Versi PHP aktif.",
+            "env_variable": "PHP_VERSION",
+            "default_value": "8.4",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:8.2,8.3,8.4,8.5",
+            "field_type": "text"
+        },
+        {
+            "name": "Package Manager",
+            "description": "auto mendeteksi lockfile; bisa dipaksa ke npm, pnpm, yarn atau bun.",
+            "env_variable": "INSTALL_DEPS",
+            "default_value": "auto",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:auto,npm,pnpm,yarn,bun",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Build",
+            "description": "Build otomatis untuk project Go atau Rust ketika command menggunakan binary hasil build.",
+            "env_variable": "AUTO_BUILD",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Skip Dependency Install",
+            "description": "Lewati install dependency saat startup.",
+            "env_variable": "SKIP_DEPS_INSTALL",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Process Manager",
+            "description": "true mengaktifkan PM2 untuk Node atau Supervisor untuk runtime lain.",
+            "env_variable": "PROCESS_MANAGER",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Headless Mode",
+            "description": "false memakai Xvfb untuk browser yang membutuhkan display virtual.",
+            "env_variable": "HEADLESS_MODE",
+            "default_value": "true",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Enable Android SDK",
+            "description": "Aktifkan Android SDK environment dan toolchain bawaan image.",
+            "env_variable": "ENABLE_ANDROID_SDK",
+            "default_value": "true",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Android Platform Version",
+            "description": "API platform Android yang dipakai untuk package tambahan saat startup.",
+            "env_variable": "ANDROID_PLATFORM_VERSION",
+            "default_value": "36",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:35,36",
+            "field_type": "text"
+        },
+        {
+            "name": "Android Build Tools Version",
+            "description": "Versi Android Build Tools yang dipakai.",
+            "env_variable": "ANDROID_BUILD_TOOLS_VERSION",
+            "default_value": "36.0.0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Android NDK Version",
+            "description": "Versi NDK yang tersedia di image.",
+            "env_variable": "ANDROID_NDK_VERSION",
+            "default_value": "28.2.13676358",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:30",
+            "field_type": "text"
+        },
+        {
+            "name": "Install Android Packages on Start",
+            "description": "true menjalankan sdkmanager untuk memastikan platform/build-tools/NDK tersedia setiap startup.",
+            "env_variable": "ANDROID_INSTALL_ON_START",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Install Android NDK on Start",
+            "description": "true memasang NDK melalui sdkmanager saat startup jika belum tersedia.",
+            "env_variable": "ANDROID_INSTALL_NDK",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Android Dependencies",
+            "description": "true melakukan warm-up Gradle dependencies untuk project Android yang memiliki gradlew.",
+            "env_variable": "AUTO_ANDROID_DEPS",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Repository Address",
+            "description": "URL Git repository untuk clone otomatis.",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:300",
+            "field_type": "text"
+        },
+        {
+            "name": "Bexxcv Browser Cache",
+            "description": "Lokasi browser Camoufox yang digunakan bersama bexxcv.",
+            "env_variable": "CAMOUFOX_INSTALL_DIR",
+            "default_value": "/opt/camoufox",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:200",
+            "field_type": "text"
+        },
+        {
+            "name": "Bexxcv Validation",
+            "description": "Validasi konfigurasi bexxcv saat image dibangun.",
+            "env_variable": "BEXXCV_NO_VALIDATE",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Username",
+            "description": "Username Git untuk repository private.",
+            "env_variable": "USERNAME",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:100",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Access Token",
+            "description": "Access token Git untuk repository private.",
+            "env_variable": "ACCESS_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:300",
+            "field_type": "text"
+        },
+        {
+            "name": "Git Branch",
+            "description": "Branch Git yang akan di-clone.",
+            "env_variable": "BRANCH",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:100",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update on Restart",
+            "description": "true menjalankan git pull pada restart jika repository sudah ada.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "User Upload Mode",
+            "description": "true melewati Git clone dan memakai file yang diupload melalui panel.",
+            "env_variable": "USER_UPLOAD",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Cron Jobs",
+            "description": "Satu baris satu cron job dengan format lima field standar dan command. Mendukung wildcard, list, range dan step.",
+            "env_variable": "CRON_JOBS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:2000",
+            "field_type": "text"
+        },
+        {
+            "name": "Enable Auto Backup",
+            "description": "true membuat backup berkala ke .codex/backups.",
+            "env_variable": "ENABLE_AUTO_BACKUP",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Backup Interval Hours",
+            "description": "Interval backup dalam jam.",
+            "env_variable": "BACKUP_INTERVAL_HOURS",
+            "default_value": "24",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:1|max:168",
+            "field_type": "text"
+        },
+        {
+            "name": "Backup Retention Count",
+            "description": "Jumlah backup terakhir yang dipertahankan.",
+            "env_variable": "BACKUP_KEEP_COUNT",
+            "default_value": "5",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:1|max:30",
+            "field_type": "text"
+        },
+        {
+            "name": "Backup on Stop",
+            "description": "true membuat satu backup tambahan saat server dihentikan melalui panel.",
+            "env_variable": "ENABLE_BACKUP_ON_STOP",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Backup to Telegram",
+            "description": "true mengirim file backup ke Telegram jika kredensial lengkap.",
+            "env_variable": "ENABLE_TELEGRAM_BACKUP",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        },
+        {
+            "name": "Telegram Bot Token",
+            "description": "Bot token untuk upload backup.",
+            "env_variable": "TELEGRAM_BOT_TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:100",
+            "field_type": "text"
+        },
+        {
+            "name": "Telegram Chat ID",
+            "description": "Chat atau user ID tujuan backup.",
+            "env_variable": "TELEGRAM_CHAT_ID",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:50",
+            "field_type": "text"
+        }
+    ]
+}
