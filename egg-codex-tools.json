@@ -10,7 +10,7 @@
     "description": "Production-focused universal Pterodactyl runtime for Node.js, Bun, Python, PHP, Go, Rust, C/C++, Android SDK builds, Playwright, Puppeteer, Firefox, WebKit, camoufox-js, bexxcv, Playwright Core 1.62.1, and a pre-fetched Camoufox runtime.",
     "features": [],
     "docker_images": {
-        "ghcr.io/fidzzcodex-me/myegg:main": "ghcr.io/fidzzcodex-me/myegg:main"
+        "ghcr.io/ZeroXinvictus/myegg:main": "ghcr.io/ZeroXinvictus/myegg:main"
     },
     "file_denylist": [],
     "startup": "/bin/bash /entrypoint.sh",
@@ -23,7 +23,7 @@
     "scripts": {
         "installation": {
             "script": "#!/bin/bash\napt-get update -y && apt-get install -y curl git wget unzip\necho \"Ready!\"",
-            "container": "ghcr.io/fidzzcodex-me/myegg:main",
+            "container": "ghcr.io/ZeroXinvictus/myegg:main",
             "entrypoint": "/bin/bash"
         }
     },
