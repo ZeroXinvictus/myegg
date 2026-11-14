@@ -24,7 +24,7 @@ ENV ANDROID_PLATFORM_VERSION=36
 ENV ANDROID_BUILD_TOOLS_VERSION=36.0.0
 ENV ANDROID_NDK_VERSION=28.2.13676358
 
-ENV PATH=/usr/local/nvm/versions/node/v24/bin:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/emulator:/opt/android-sdk/build-tools/36.0.0:${PATH}
+ENV PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/emulator:/opt/android-sdk/build-tools/36.0.0:${PATH}
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -334,21 +334,21 @@ printf '%s\n' 'Browser Runtime'
 printf '%s\n' '---------------'
 
 printf 'Chromium   : '
-if [ -d "${PLAYWRIGHT_BROWSERS_PATH}/chromium-"* ] 2>/dev/null; then
+if ls -d "${PLAYWRIGHT_BROWSERS_PATH}/chromium-"* >/dev/null 2>&1; then
     printf '%s\n' 'ready'
 else
     printf '%s\n' 'installed'
 fi
 
 printf 'Firefox    : '
-if [ -d "${PLAYWRIGHT_BROWSERS_PATH}/firefox-"* ] 2>/dev/null; then
+if ls -d "${PLAYWRIGHT_BROWSERS_PATH}/firefox-"* >/dev/null 2>&1; then
     printf '%s\n' 'ready'
 else
     printf '%s\n' 'installed'
 fi
 
 printf 'WebKit     : '
-if [ -d "${PLAYWRIGHT_BROWSERS_PATH}/webkit-"* ] 2>/dev/null; then
+if ls -d "${PLAYWRIGHT_BROWSERS_PATH}/webkit-"* >/dev/null 2>&1; then
     printf '%s\n' 'ready'
 else
     printf '%s\n' 'installed'
@@ -400,21 +400,22 @@ EOF
 
 RUN chmod +x /usr/local/bin/php-versions
 
+# --- Pterodactyl-friendly permissions ---
+# Runtime user (Wings) bukan root, jadi semua direktori yang perlu ditulis harus writable.
+# - /workspace, /data           : tempat kerja utama
+# - /opt/browsers               : Playwright cache (browsers download/update)
+# - /opt/camoufox, -cache       : Camoufox install + cache
+# - /opt/bexxcv                 : bexxcv state
+# - /opt/android-sdk            : sdkmanager/adb kadang butuh tulis (.android, licences)
+RUN mkdir -p /workspace /data \
+    && chmod -R 0777 /workspace /data \
+    && chmod -R 0777 /opt/browsers /opt/camoufox /opt/camoufox-cache /opt/bexxcv \
+    && chmod -R 0777 /opt/android-sdk
+
 ENV PROJECT_NAME=ZeroXinvictus
 ENV PROJECT_IDENTITY=ZeroXinvictus
 
 WORKDIR /workspace
-
-RUN useradd \
-        --create-home \
-        --shell /bin/bash \
-        --uid 1000 \
-        zero \
-    && usermod -aG sudo zero \
-    && echo 'zero ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/zero \
-    && chmod 440 /etc/sudoers.d/zero \
-    && chown -R zero:zero /workspace /data \
-    && chown -R zero:zero /home/zero
 
 COPY entrypoint.sh /entrypoint.sh
 COPY scripts /scripts
