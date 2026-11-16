@@ -117,7 +117,7 @@ RUN pip install --break-system-packages "playwright==${PLAYWRIGHT_VERSION}" && \
 
 RUN --mount=type=secret,id=github_token,required=false \
     if [ -f /run/secrets/github_token ]; then export GITHUB_TOKEN="$(cat /run/secrets/github_token)"; fi && \
-    pip install --break-system-packages --upgrade --force-reinstall "PyYAML>=6.0.1" && \
+    pip install --break-system-packages --ignore-installed "PyYAML>=6.0.1" && \
     pip install --break-system-packages "playwright==${PLAYWRIGHT_VERSION}" "camoufox[geoip]" && \
     for i in 1 2 3 4 5; do \
       XDG_CACHE_HOME=/opt/camoufox-cache python3 -m camoufox fetch && break || { echo "camoufox fetch gagal, retry $i/5"; sleep 10; }; \
