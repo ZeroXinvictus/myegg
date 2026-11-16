@@ -1,430 +1,203 @@
 FROM ubuntu:24.04
 
-ARG DEBIAN_FRONTEND=noninteractive
-ARG TZ=Asia/Jakarta
+ENV CODEX_VERSION=15
+LABEL org.opencontainers.image.title="codex-tools" \
+      org.opencontainers.image.version="${CODEX_VERSION}" \
+      org.opencontainers.image.source="https://github.com/ZeroXinvictus/myegg"
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=${TZ}
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Jakarta
 
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+RUN apt-get update -y && apt-get install -y \
+    curl wget git git-lfs unzip zip tar xz-utils zstd bzip2 \
+    ca-certificates gnupg dirmngr lsb-release \
+    build-essential software-properties-common \
+    jq nano vim htop procps \
+    sqlite3 ffmpeg imagemagick \
+    openssh-client cron supervisor \
+    python3-dev libvips-dev \
+    libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev \
+    postgresql-client default-mysql-client redis-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NVM_DIR=/usr/local/nvm
-ENV NODE_VERSION_DEFAULT=24
+RUN mkdir -p $NVM_DIR && \
+    curl -fsS --retry 3 --retry-delay 2 -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+RUN . $NVM_DIR/nvm.sh && \
+    nvm install 22 && \
+    nvm install 24 && \
+    nvm install 26 && \
+    nvm alias default 24 && \
+    ln -s "$NVM_DIR/versions/node/$(nvm version default)" /usr/local/node-current && \
+    chmod -R a+rX $NVM_DIR
+ENV PATH="/usr/local/node-current/bin:$PATH"
 
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/browsers
+ENV BUN_INSTALL=/usr/local/bun
+RUN curl -fsS --retry 3 --retry-delay 2 https://bun.sh/install | bash && chmod -R a+rX $BUN_INSTALL
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 
-ENV CAMOUFOX_INSTALL_DIR=/opt/camoufox
-ENV BEXXCV_HOME=/opt/bexxcv
-ENV XDG_CACHE_HOME=/opt/camoufox-cache
-
-ENV ANDROID_SDK_ROOT=/opt/android-sdk
-ENV ANDROID_HOME=/opt/android-sdk
-ENV ANDROID_PLATFORM_VERSION=36
-ENV ANDROID_BUILD_TOOLS_VERSION=36.0.0
-ENV ANDROID_NDK_VERSION=28.2.13676358
-
-ENV PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/emulator:/opt/android-sdk/build-tools/36.0.0:${PATH}
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        curl \
-        wget \
-        git \
-        unzip \
-        zip \
-        xz-utils \
-        bzip2 \
-        gzip \
-        tar \
-        jq \
-        file \
-        procps \
-        psmisc \
-        lsof \
-        net-tools \
-        iproute2 \
-        iputils-ping \
-        dnsutils \
-        openssh-client \
-        rsync \
-        sudo \
-        nano \
-        vim \
-        less \
-        tree \
-        htop \
-        screen \
-        tmux \
-        locales \
-        tzdata \
-        gnupg \
-        dirmngr \
-        software-properties-common \
-        apt-transport-https \
-        build-essential \
-        python3 \
-        python3-pip \
-        python3-venv \
-        python3-dev \
-        pkg-config \
-        libssl-dev \
-        libffi-dev \
-        libxml2-dev \
-        libxslt1-dev \
-        zlib1g-dev \
-        libjpeg-dev \
-        libpng-dev \
-        libwebp-dev \
-        libfreetype6-dev \
-        libx11-xcb1 \
-        libxcomposite1 \
-        libxdamage1 \
-        libxfixes3 \
-        libxrandr2 \
-        libgbm1 \
-        libgtk-3-0 \
-        libnss3 \
-        libnspr4 \
-        libatk1.0-0 \
-        libatk-bridge2.0-0 \
-        libcups2 \
-        libdrm2 \
-        libdbus-1-3 \
-        libasound2t64 \
-        libxshmfence1 \
-        xvfb \
-        xauth \
-    && locale-gen en_US.UTF-8 \
-    && update-locale LANG=en_US.UTF-8 \
-    && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
-    && echo ${TZ} > /etc/timezone \
+RUN for i in 1 2 3 4 5; do add-apt-repository -y ppa:deadsnakes/ppa && break || sleep 5; done && \
+    apt-get update -y && \
+    apt-get install -y \
+      python3.12 python3.12-venv \
+      python3.13 python3.13-venv \
+      python3.14 python3.14-venv \
+      python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p \
-        /usr/local/nvm \
-        /opt/browsers \
-        /opt/camoufox \
-        /opt/camoufox-cache \
-        /opt/bexxcv \
-        /opt/android-sdk \
-        /workspace \
-        /data \
-    && chmod -R 755 /opt /workspace /data
+RUN for i in 1 2 3 4 5; do add-apt-repository -y ppa:ondrej/php && break || sleep 5; done && \
+    apt-get update -y && \
+    for v in 8.2 8.3 8.4 8.5; do \
+      apt-get install -y \
+        php$v php$v-cli php$v-fpm php$v-common \
+        php$v-mysql php$v-pgsql php$v-sqlite3 \
+        php$v-curl php$v-gd php$v-mbstring \
+        php$v-xml php$v-zip php$v-bcmath php$v-intl; \
+    done && \
+    apt-get install -y composer && \
+    rm -rf /var/lib/apt/lists/*
+RUN update-alternatives --install /usr/bin/php php /usr/bin/php8.2 82 && \
+    update-alternatives --install /usr/bin/php php /usr/bin/php8.3 83 && \
+    update-alternatives --install /usr/bin/php php /usr/bin/php8.4 84 && \
+    update-alternatives --install /usr/bin/php php /usr/bin/php8.5 85 && \
+    update-alternatives --set php /usr/bin/php8.4
 
-RUN curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
-    && . "${NVM_DIR}/nvm.sh" \
-    && nvm install 22 \
-    && nvm install 24 \
-    && nvm install 26 \
-    && nvm alias default 24 \
-    && nvm use 24 \
-    && npm install -g \
-        pnpm \
-        yarn \
-        pm2 \
-        playwright@1.62.1 \
-        playwright-core@1.62.1 \
-        puppeteer \
-        puppeteer-real-browser \
-        puppeteer-extra \
-        puppeteer-extra-plugin-stealth \
-        camoufox-js@0.13.0 \
-        bexxcv@1.1.0 \
-    && npm cache clean --force \
-    && ln -sfn "${NVM_DIR}/versions/node/$(nvm version default)" /usr/local/node-current
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1
 
-ENV PATH=/usr/local/node-current/bin:${PATH}
+ARG GO_VERSION=latest
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$GO_VERSION" = "latest" ]; then GO_VERSION=$(curl -fsS "https://go.dev/VERSION?m=text" | head -n1 | sed 's/^go//'); fi && \
+    curl -fsSL --retry 3 --retry-delay 2 -o /tmp/go.tar.gz "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz && \
+    /usr/local/go/bin/go version
+ENV PATH="/usr/local/go/bin:${PATH}" \
+    GOPATH="/home/container/go" \
+    GOCACHE="/home/container/.cache/go-build"
 
-RUN . "${NVM_DIR}/nvm.sh" \
-    && npx --yes playwright install chromium firefox webkit --with-deps
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo
+RUN curl -fsS --retry 3 --retry-delay 2 --proto '=https' --tlsv1.2 https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain stable --profile minimal && \
+    chmod -R a+rwX $RUSTUP_HOME $CARGO_HOME
+ENV PATH="${CARGO_HOME}/bin:${PATH}"
 
-RUN mkdir -p \
-        /opt/camoufox \
-        /opt/camoufox-cache \
-        /opt/bexxcv \
-    && . "${NVM_DIR}/nvm.sh" \
-    && CAMOUFOX_INSTALL_DIR=/opt/camoufox npx bexxcv fetch \
-    && CAMOUFOX_INSTALL_DIR=/opt/camoufox npx bexxcv doctor
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        openjdk-17-jdk \
-        lib32stdc++6 \
-        lib32z1 \
-        libc6-i386 \
+RUN apt-get update -y && apt-get install -y \
+    cmake ninja-build gdb valgrind clang clang-format \
     && rm -rf /var/lib/apt/lists/*
 
-RUN set -eux; \
-    mkdir -p /tmp/android-cmdline; \
-    cd /tmp/android-cmdline; \
-    wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip; \
-    unzip -q commandlinetools-linux-13114758_latest.zip; \
-    mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools"; \
-    mv cmdline-tools "${ANDROID_SDK_ROOT}/cmdline-tools/latest"; \
-    rm -rf /tmp/android-cmdline
-
-RUN yes | sdkmanager --licenses >/dev/null || true
-
-RUN sdkmanager \
-        "platform-tools" \
-        "platforms;android-${ANDROID_PLATFORM_VERSION}" \
-        "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" \
-        "ndk;${ANDROID_NDK_VERSION}" \
-        "cmdline-tools;latest" \
-    && yes | sdkmanager --licenses >/dev/null || true
-
-RUN mkdir -p /opt/android-sdk/tools \
-    && ln -sfn /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager /usr/local/bin/sdkmanager \
-    && ln -sfn /opt/android-sdk/platform-tools/adb /usr/local/bin/adb \
-    && ln -sfn /opt/android-sdk/platform-tools/fastboot /usr/local/bin/fastboot
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        lsb-release \
-        ca-certificates \
-        apt-transport-https \
-        software-properties-common \
-    && add-apt-repository -y ppa:ondrej/php \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        php8.2 \
-        php8.2-cli \
-        php8.2-fpm \
-        php8.2-common \
-        php8.2-mysql \
-        php8.2-pgsql \
-        php8.2-sqlite3 \
-        php8.2-curl \
-        php8.2-gd \
-        php8.2-mbstring \
-        php8.2-xml \
-        php8.2-zip \
-        php8.2-bcmath \
-        php8.2-intl \
-        php8.3 \
-        php8.3-cli \
-        php8.3-fpm \
-        php8.3-common \
-        php8.3-mysql \
-        php8.3-pgsql \
-        php8.3-sqlite3 \
-        php8.3-curl \
-        php8.3-gd \
-        php8.3-mbstring \
-        php8.3-xml \
-        php8.3-zip \
-        php8.3-bcmath \
-        php8.3-intl \
-        php8.4 \
-        php8.4-cli \
-        php8.4-fpm \
-        php8.4-common \
-        php8.4-mysql \
-        php8.4-pgsql \
-        php8.4-sqlite3 \
-        php8.4-curl \
-        php8.4-gd \
-        php8.4-mbstring \
-        php8.4-xml \
-        php8.4-zip \
-        php8.4-bcmath \
-        php8.4-intl \
-        php8.5 \
-        php8.5-cli \
-        php8.5-fpm \
-        php8.5-common \
-        php8.5-mysql \
-        php8.5-pgsql \
-        php8.5-sqlite3 \
-        php8.5-curl \
-        php8.5-gd \
-        php8.5-mbstring \
-        php8.5-xml \
-        php8.5-zip \
-        php8.5-bcmath \
-        php8.5-intl \
-        composer \
-    && update-alternatives --install /usr/bin/php php /usr/bin/php8.2 82 \
-    && update-alternatives --install /usr/bin/php php /usr/bin/php8.3 83 \
-    && update-alternatives --install /usr/bin/php php /usr/bin/php8.4 84 \
-    && update-alternatives --install /usr/bin/php php /usr/bin/php8.5 85 \
-    && update-alternatives --set php /usr/bin/php8.4 \
+RUN apt-get update -y && apt-get install -y \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
+    libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2t64 \
+    libpango-1.0-0 libcairo2 fonts-liberation \
+    libx11-6 libxext6 libxcb1 libxrender1 libxi6 \
+    libgtk-3-0 libvulkan1 libdbus-glib-1-2 libx11-xcb1 \
+    xvfb x11-utils xauth \
+    libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
+    libwoff1 libopus0 libwebpdemux2 libharfbuzz-icu0 \
+    libenchant-2-2 libsecret-1-0 libhyphen0 libmanette-0.2-0 libgles2 \
+    fonts-noto fonts-noto-color-emoji fonts-noto-cjk fonts-dejavu-core \
+    locales tzdata \
+    && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen \
     && rm -rf /var/lib/apt/lists/*
 
-RUN php -v \
-    && php8.2 -v \
-    && php8.3 -v \
-    && php8.4 -v \
-    && php8.5 -v \
-    && composer --version
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
-RUN . "${NVM_DIR}/nvm.sh" \
-    && node --version \
-    && npm --version \
-    && npx --yes bexxcv version \
-    && npx --yes bexxcv path
+ARG PLAYWRIGHT_VERSION=1.62.0
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/browsers \
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN pip install --break-system-packages "playwright==${PLAYWRIGHT_VERSION}" && \
+    python3 -m playwright install chromium firefox webkit --with-deps && \
+    chmod -R a+rX /opt/browsers && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN cat > /usr/local/bin/runtime-info <<'EOF'
-#!/bin/sh
-printf '%s\n' 'ZeroXinvictus Runtime'
-printf '%s\n' '---------------------'
-printf 'Node       : '
-node --version
-printf 'npm        : '
-npm --version
-printf 'PHP        : '
-php --version | head -n 1
-printf 'Composer   : '
-composer --version 2>/dev/null | head -n 1
-printf 'Python     : '
-python3 --version
-printf 'Java       : '
-java -version 2>&1 | head -n 1
-printf 'ADB        : '
-adb version 2>/dev/null | head -n 1
-printf 'Playwright : '
-playwright --version 2>/dev/null || true
-printf 'Bexxcv     : '
-npx --yes bexxcv version 2>/dev/null || true
-printf 'Camoufox   : '
-if [ -d "${CAMOUFOX_INSTALL_DIR}" ]; then
-    printf '%s\n' 'ready'
-else
-    printf '%s\n' 'missing'
-fi
-EOF
+RUN --mount=type=secret,id=github_token,required=false \
+    if [ -f /run/secrets/github_token ]; then export GITHUB_TOKEN="$(cat /run/secrets/github_token)"; fi && \
+    pip install --break-system-packages "playwright==${PLAYWRIGHT_VERSION}" "camoufox[geoip]" && \
+    for i in 1 2 3 4 5; do \
+      XDG_CACHE_HOME=/opt/camoufox-cache python3 -m camoufox fetch && break || { echo "camoufox fetch gagal, retry $i/5"; sleep 10; }; \
+    done && \
+    test -n "$(ls -A /opt/camoufox-cache/camoufox 2>/dev/null)" && \
+    chmod -R a+rX /opt/camoufox-cache
 
-RUN chmod +x /usr/local/bin/runtime-info
+ENV NODE_GLOBAL=/opt/node-global \
+    CAMOUFOX_INSTALL_DIR=/opt/camoufox-js
+RUN --mount=type=secret,id=github_token,required=false \
+    if [ -f /run/secrets/github_token ]; then export GITHUB_TOKEN="$(cat /run/secrets/github_token)"; fi && \
+    . $NVM_DIR/nvm.sh && \
+    mkdir -p $NODE_GLOBAL && \
+    npm install --prefix $NODE_GLOBAL \
+      "playwright@${PLAYWRIGHT_VERSION}" "playwright-core@${PLAYWRIGHT_VERSION}" \
+      camoufox-js \
+      puppeteer puppeteer-core puppeteer-real-browser \
+      puppeteer-extra puppeteer-extra-plugin-stealth \
+      pm2 pnpm yarn && \
+    for i in 1 2 3 4 5; do \
+      NODE_PATH=$NODE_GLOBAL/node_modules $NODE_GLOBAL/node_modules/.bin/camoufox-js fetch && break || { echo "camoufox-js fetch gagal, retry $i/5"; sleep 10; }; \
+    done && \
+    test -n "$(ls -A /opt/camoufox-js 2>/dev/null)" && \
+    chmod -R a+rX $NODE_GLOBAL /opt/camoufox-js
+ENV NODE_PATH=/opt/node-global/node_modules
+ENV PATH="/opt/node-global/node_modules/.bin:${PATH}"
 
-RUN cat > /usr/local/bin/start-xvfb <<'EOF'
-#!/bin/sh
-if [ -n "${DISPLAY:-}" ]; then
-    exit 0
-fi
+RUN ARCH=$(uname -m) && \
+    case "$ARCH" in x86_64) T=x86_64 ;; aarch64) T=aarch64 ;; *) echo "arsitektur $ARCH tidak didukung ttyd" && exit 1 ;; esac && \
+    curl -fsSL --retry 3 --retry-delay 2 -o /usr/local/bin/ttyd "https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.${T}" && \
+    chmod +x /usr/local/bin/ttyd && \
+    /usr/local/bin/ttyd --version
 
-export DISPLAY=:99
+RUN ARCH=$(dpkg --print-architecture) && \
+    curl -fsSL --retry 3 --retry-delay 2 -o /usr/local/bin/cloudflared "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${ARCH}" && \
+    chmod +x /usr/local/bin/cloudflared && \
+    /usr/local/bin/cloudflared --version
 
-if ! pgrep -x Xvfb >/dev/null 2>&1; then
-    Xvfb :99 -screen 0 1920x1080x24 -ac +extension RANDR >/tmp/xvfb.log 2>&1 &
-    sleep 1
-fi
+ARG ANDROID_CMDLINE_TOOLS=15859902
+ARG ANDROID_CMDLINE_SHA256=
+ARG ANDROID_PLATFORMS="android-36 android-37"
+ARG ANDROID_BUILD_TOOLS="36.0.0 37.0.0"
+ENV ANDROID_SDK_BAKED=/opt/android-sdk
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+      openjdk-17-jdk-headless openjdk-21-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+RUN if [ "$(dpkg --print-architecture)" != "amd64" ]; then \
+      echo "Android SDK dilewati: build-tools resmi Google cuma tersedia untuk linux x86_64"; \
+    else \
+      curl -fsSL --retry 3 --retry-delay 2 -o /tmp/cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}_latest.zip" && \
+      if [ -n "$ANDROID_CMDLINE_SHA256" ]; then echo "${ANDROID_CMDLINE_SHA256}  /tmp/cmdline-tools.zip" | sha256sum -c -; fi && \
+      mkdir -p $ANDROID_SDK_BAKED/cmdline-tools && \
+      unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-extract && \
+      mv /tmp/cmdline-extract/cmdline-tools $ANDROID_SDK_BAKED/cmdline-tools/latest && \
+      rm -rf /tmp/cmdline-tools.zip /tmp/cmdline-extract && \
+      export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 && \
+      (yes || true) | $ANDROID_SDK_BAKED/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_BAKED --licenses >/dev/null && \
+      PKGS="platform-tools" && \
+      for p in $ANDROID_PLATFORMS; do PKGS="$PKGS platforms;$p"; done && \
+      for b in $ANDROID_BUILD_TOOLS; do PKGS="$PKGS build-tools;$b"; done && \
+      $ANDROID_SDK_BAKED/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_BAKED $PKGS && \
+      chmod -R a+rX $ANDROID_SDK_BAKED; \
+    fi
 
-export DISPLAY=:99
-EOF
+WORKDIR /home/container
+ENV HOME=/home/container \
+    USER=container
 
-RUN chmod +x /usr/local/bin/start-xvfb
-
-RUN cat > /usr/local/bin/bexxcv-doctor <<'EOF'
-#!/bin/sh
-set -e
-
-export CAMOUFOX_INSTALL_DIR="${CAMOUFOX_INSTALL_DIR:-/opt/camoufox}"
-
-printf '%s\n' 'Running Bexxcv doctor...'
-npx --yes bexxcv doctor
-EOF
-
-RUN chmod +x /usr/local/bin/bexxcv-doctor
-
-RUN cat > /usr/local/bin/browser-status <<'EOF'
-#!/bin/sh
-printf '%s\n' 'Browser Runtime'
-printf '%s\n' '---------------'
-
-printf 'Chromium   : '
-if ls -d "${PLAYWRIGHT_BROWSERS_PATH}/chromium-"* >/dev/null 2>&1; then
-    printf '%s\n' 'ready'
-else
-    printf '%s\n' 'installed'
-fi
-
-printf 'Firefox    : '
-if ls -d "${PLAYWRIGHT_BROWSERS_PATH}/firefox-"* >/dev/null 2>&1; then
-    printf '%s\n' 'ready'
-else
-    printf '%s\n' 'installed'
-fi
-
-printf 'WebKit     : '
-if ls -d "${PLAYWRIGHT_BROWSERS_PATH}/webkit-"* >/dev/null 2>&1; then
-    printf '%s\n' 'ready'
-else
-    printf '%s\n' 'installed'
-fi
-
-printf 'Camoufox   : '
-if [ -d "${CAMOUFOX_INSTALL_DIR}" ]; then
-    printf '%s\n' 'ready'
-else
-    printf '%s\n' 'missing'
-fi
-
-printf 'camoufox-js: '
-if npm root -g | xargs -I{} test -d "{}/camoufox-js"; then
-    printf '%s\n' 'installed'
-else
-    printf '%s\n' 'missing'
-fi
-
-printf 'bexxcv     : '
-if npm root -g | xargs -I{} test -d "{}/bexxcv"; then
-    printf '%s\n' 'installed'
-else
-    printf '%s\n' 'missing'
-fi
-
-printf 'bexxcv CLI : '
-if command -v bexxcv >/dev/null 2>&1; then
-    printf '%s\n' 'ready'
-else
-    printf '%s\n' 'missing'
-fi
-EOF
-
-RUN chmod +x /usr/local/bin/browser-status
-
-RUN cat > /usr/local/bin/php-versions <<'EOF'
-#!/bin/sh
-printf '%s\n' 'PHP Versions'
-printf '%s\n' '------------'
-php8.2 --version | head -n 1
-php8.3 --version | head -n 1
-php8.4 --version | head -n 1
-php8.5 --version | head -n 1
-printf '%s\n' ''
-printf '%s\n' 'Default PHP'
-php --version | head -n 1
-EOF
-
-RUN chmod +x /usr/local/bin/php-versions
-
-# --- Pterodactyl-friendly permissions ---
-# Runtime user (Wings) bukan root, jadi semua direktori yang perlu ditulis harus writable.
-# - /workspace, /data           : tempat kerja utama
-# - /opt/browsers               : Playwright cache (browsers download/update)
-# - /opt/camoufox, -cache       : Camoufox install + cache
-# - /opt/bexxcv                 : bexxcv state
-# - /opt/android-sdk            : sdkmanager/adb kadang butuh tulis (.android, licences)
-RUN mkdir -p /workspace /data \
-    && chmod -R 0777 /workspace /data \
-    && chmod -R 0777 /opt/browsers /opt/camoufox /opt/camoufox-cache /opt/bexxcv \
-    && chmod -R 0777 /opt/android-sdk
-
-ENV PROJECT_NAME=ZeroXinvictus
-ENV PROJECT_IDENTITY=ZeroXinvictus
-
-WORKDIR /workspace
+RUN echo '' >> /etc/bash.bashrc && \
+    echo 'if [ -n "$CODEX_PS1" ]; then' >> /etc/bash.bashrc && \
+    echo '  PS1="$CODEX_PS1"' >> /etc/bash.bashrc && \
+    echo 'fi' >> /etc/bash.bashrc
 
 COPY entrypoint.sh /entrypoint.sh
-COPY scripts /scripts
+COPY scripts/ /scripts/
 
-RUN chmod +x /entrypoint.sh \
-    && find /scripts -type f -name '*.sh' -exec chmod +x {} \;
+RUN apt-get update -y && apt-get install -y --no-install-recommends dos2unix && \
+    dos2unix /entrypoint.sh /scripts/*.sh && \
+    sed -i '1s/^\xEF\xBB\xBF//' /entrypoint.sh /scripts/*.sh && \
+    chmod +x /entrypoint.sh /scripts/*.sh && \
+    for f in /entrypoint.sh /scripts/*.sh; do bash -n "$f" || exit 1; done && \
+    apt-get purge -y dos2unix && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-ENV SHELL=/bin/bash
-ENV TERM=xterm-256color
-
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bash"]
+CMD ["/bin/bash", "/entrypoint.sh"]
