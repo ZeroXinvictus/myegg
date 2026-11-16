@@ -158,8 +158,8 @@ RUN ARCH=$(dpkg --print-architecture) && \
 
 ARG ANDROID_CMDLINE_TOOLS=15859902
 ARG ANDROID_CMDLINE_SHA256=
-ARG ANDROID_PLATFORMS="android-36 android-37"
-ARG ANDROID_BUILD_TOOLS="36.0.0 37.0.0"
+ARG ANDROID_PLATFORMS="android-35 android-36"
+ARG ANDROID_BUILD_TOOLS="35.0.0 36.0.0"
 ENV ANDROID_SDK_BAKED=/opt/android-sdk
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
       openjdk-17-jdk-headless openjdk-21-jdk-headless \
